@@ -17,26 +17,34 @@ app.get('/payload', function (req, res) {
 });
 
 app.post('/payload', function (req, res) {
-	//verify that the payload is a push from the correct repo
-	//verify repository.name == 'wackcoon-device' or repository.full_name = 'DanielEgan/wackcoon-device'
-	console.log(req.body.pusher.name + ' just pushed to ' + req.body.repository.name);
+	console.log('Received new event: ' + req.body.event);
 
 	console.log('pulling code from GitHub...');
 
 	// reset any changes that have been made locally
-	exec('git -C ~/projects/wackcoon-device reset --hard', execCallback);
+	exec('git -C ~/Desktop/Gastos/code/gastos-backend reset --hard', execCallback);
 
 	// and ditch any files that have been added locally too
-	exec('git -C ~/projects/wackcoon-device clean -df', execCallback);
+	exec('git -C ~/Desktop/Gastos/code/gastos-backend clean -df', execCallback);
 
 	// now pull down the latest
-	exec('git -C ~/projects/wackcoon-device pull -f', execCallback);
+	exec('git -C ~/Desktop/Gastos/code/gastos-backend pull -f', execCallback);
 
-	// and npm install with --production
-	exec('npm -C ~/projects/wackcoon-device install --production', execCallback);
+	exec('echo Building bootable jar', execCallback);
+	exec('~/Desktop/Gastos/code/gastos-backend/gradlew -b ~/Desktop/Gastos/code/gastos-backend/build.gradle.kts bootJar', execCallback);
 
-	// and run tsc
-	exec('tsc', execCallback);
+	exec('echo Moving jar', execCallback);
+	exec('mv ~/Desktop/Gastos/code/gastos-backend/build/libs/gastos-backend.jar ~/Desktop/Gastos/gastos-backend.jar', execCallback);
+
+	exec('echo Making jar executable', execCallback);
+	exec('chmod +x ~/Desktop/Gastos/gastos-backend.jar', execCallback);
+
+	exec('echo Stopping and starting service', execCallback);
+	exec('sudo systemctl stop gastos-backend.service', execCallback);
+
+	exec('sudo systemctl start gastos-backend.service', execCallback);
+
+	exec('echo All done', execCallback);
 });
 
 app.listen(5000, function () {
